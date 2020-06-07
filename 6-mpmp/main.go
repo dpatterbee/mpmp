@@ -2,21 +2,25 @@ package main
 
 import (
 	"fmt"
-	"sync"
+	"sort"
 )
 
 const goal int = 1000000
 
+type solution struct {
+	dep1  int
+	dep2  int
+	steps int
+}
+
 func main() {
 
-	var wg sync.WaitGroup
-
 	fib := []int{0, 1}
-	for len(fib) < 31 {
+	for len(fib) < 40 {
 		fib = append(fib, fib[len(fib)-1]+fib[len(fib)-2])
 	}
 
-	solutions := make(map[int]int)
+	var solutions []solution
 
 	for left, right := 0, len(fib)-1; left < right; left, right = left+1, right-1 {
 		fib[left], fib[right] = fib[right], fib[left]
@@ -27,40 +31,65 @@ func main() {
 		fn := fib[i+1]
 		fn1 := fib[i]
 
-		for x := 0; x <= 1000000/fn1; x++ {
+		for x := 0; x <= goal/fn1; x++ {
 			p := fn1 * x
 			if p > goal {
 				break
 			}
 
-			wg.Add(1)
-			go worker(&wg, fn1, fn, p, i)
+			g := goal - p
+			var y int
+			if g%fn == 0 {
+				y = g / fn
+
+				solutions = append(solutions, solution{
+					dep1:  x,
+					dep2:  y,
+					steps: findSteps(x, y),
+				})
+			}
+
 		}
 
-		if i == len(fib)-2 {
+		if i == len(fib)-3 {
 			break
 		}
 
 	}
 
-	wg.Wait()
+	sort.Sort(bySteps(solutions))
+	fmt.Println(solutions[0:10])
 
-	fmt.Println(solutions)
 }
 
-func worker(wg *sync.WaitGroup, fn1, fn, p, i int) {
-	defer wg.Done()
+func findSteps(x, y int) int {
+	days := 2
 
-	for y := 0; y <= 1000000-p; y++ {
-		q := fn * (y)
-		if p+q > goal {
-			break
-		}
-		if p+q == goal {
-			fmt.Println(i)
-		}
+	prevBalance := x
+	balance := x + y
+
+	for balance < goal {
+		prevBalance, balance = balance, prevBalance+balance
+		days++
 	}
 
+	if balance > goal {
+		panic(x)
+	}
+
+	return days
+}
+
+type bySteps []solution
+
+func (s bySteps) Len() int {
+	return len(s)
+}
+func (s bySteps) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s bySteps) Less(i, j int) bool {
+	return s[i].steps > s[j].steps
 }
 
 func test(x, y int) {
