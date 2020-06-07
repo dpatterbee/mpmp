@@ -2,44 +2,39 @@ package main
 
 import (
 	"fmt"
+	"sync"
 )
+
+const goal int = 1000000
 
 func main() {
 
-	goal := 1000000
+	var wg sync.WaitGroup
 
 	fib := []int{0, 1}
-	for i := 0; i < 30; i++ {
+	for len(fib) < 31 {
 		fib = append(fib, fib[len(fib)-1]+fib[len(fib)-2])
 	}
 
 	solutions := make(map[int]int)
 
-	// fmt.Println(fib)
+	for left, right := 0, len(fib)-1; left < right; left, right = left+1, right-1 {
+		fib[left], fib[right] = fib[right], fib[left]
+	}
 
-	for i, v := range fib {
-		if i < 3 {
-			continue
-		}
-		fn := v
-		fn1 := fib[i+1]
-		fmt.Println(fn1, fn)
+	for i := range fib {
+
+		fn := fib[i+1]
+		fn1 := fib[i]
 
 		for x := 0; x <= 1000000/fn1; x++ {
 			p := fn1 * x
 			if p > goal {
 				break
 			}
-			for y := 0; y <= 1000000-p; y++ {
-				q := fn * (y)
-				if p+q > goal {
-					break
-				}
-				if p+q == goal {
-					// fmt.Println(i, x, y)
-					solutions[i] = solutions[i] + 1
-				}
-			}
+
+			wg.Add(1)
+			go worker(&wg, fn1, fn, p, i)
 		}
 
 		if i == len(fib)-2 {
@@ -48,10 +43,24 @@ func main() {
 
 	}
 
-	fmt.Println(solutions)
+	wg.Wait()
 
-	// fmt.Println(max, maxi, maxj)
-	// test(144, 154)
+	fmt.Println(solutions)
+}
+
+func worker(wg *sync.WaitGroup, fn1, fn, p, i int) {
+	defer wg.Done()
+
+	for y := 0; y <= 1000000-p; y++ {
+		q := fn * (y)
+		if p+q > goal {
+			break
+		}
+		if p+q == goal {
+			fmt.Println(i)
+		}
+	}
+
 }
 
 func test(x, y int) {
