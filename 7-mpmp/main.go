@@ -42,9 +42,8 @@ func isUnique(dists []float64) bool {
 	for _, v := range dists {
 		if _, ok := keys[v]; ok {
 			return false
-		} else {
-			keys[v] = true
 		}
+		keys[v] = true
 	}
 	return true
 }
@@ -70,7 +69,7 @@ func checkerboard(setLength int, subset []int, subsetSize int) {
 			for _, v := range newSubset {
 				board = append(board, [2]int{v / n, v % n})
 			}
-			distanceCheck(board)
+			go distanceCheck(board)
 
 		} else {
 			checkerboard(setLength, newSubset, subsetSize)
